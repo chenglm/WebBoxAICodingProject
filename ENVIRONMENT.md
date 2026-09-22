@@ -22,7 +22,7 @@ Port `6379` is already used by an unrelated local project and has its own data d
 # Use JDK 17 only in the current terminal session.
 . scripts/use-project-java.sh
 
-# Load non-secret connection settings and start the project Redis instance.
+# Load local connection settings, the required JWT secret, and start the project Redis instance.
 set -a
 . ./.env
 set +a
@@ -42,5 +42,16 @@ The forthcoming Spring Boot service will map the following environment variables
 
 - `WEBBOX_DB_HOST`, `WEBBOX_DB_PORT`, `WEBBOX_DB_NAME`, `WEBBOX_DB_USERNAME`, `WEBBOX_DB_PASSWORD`
 - `WEBBOX_REDIS_HOST`, `WEBBOX_REDIS_PORT`
+- `WEBBOX_JWT_SECRET` — required private signing secret, at least 32 bytes
 
 Redis is used for short-lived menu cache entries and distributed duplicate-submission suppression. MySQL remains the source of truth for orders and the final idempotency/unique-order guarantees.
+
+## JWT Secret Setup
+
+The backend refuses to start if `WEBBOX_JWT_SECRET` is missing, blank, or shorter than 32 bytes. Generate a fresh local value and put it only in the ignored `.env` file:
+
+```sh
+openssl rand -base64 48
+```
+
+Do not reuse the example placeholder, publish the generated value, or commit `.env`.
