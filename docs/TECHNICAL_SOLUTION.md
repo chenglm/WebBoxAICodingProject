@@ -1,77 +1,77 @@
-# WebBoxEnterpriseEmployeeMealOrderingPlatform — 技术方案概要
+# WebBoxEnterpriseEmployeeMealOrderingPlatform — Technical Solution Overview
 
-## 1. 目标与范围
+## 1. Objectives and Scope
 
-WeBox 是面向企业员工的餐食订购平台。本阶段交付 **Tier 1（核心）** 与 **Tier 2（进阶）**：一个可本地启动、可持久化、可演示的前后端系统。
+WebBox is a meal ordering platform for enterprise employees. This phase delivers **Tier 1 (Core)** and **Tier 2 (Advanced)**: a front-end/back-end system that can be started locally, persists data, and can be demonstrated.
 
-本阶段不实现 Tier 3 的实时库存同步、LLM 推荐和经营看板；但订单、库存和数据模型会保留可扩展边界，避免后续重构核心流程。
+This phase does not implement Tier 3's real-time inventory sync, LLM recommendations, and operations dashboard; however, the order, inventory, and data models retain extensible boundaries so that core flows do not need to be refactored later.
 
-### 1.1 本阶段验收目标
+### 1.1 Acceptance Objectives for This Phase
 
-| 范围 | 关键结果 |
+| Scope | Key Results |
 | --- | --- |
-| Tier 1 | 注册登录、菜单浏览/检索/多分类筛选/详情、带定制项的购物车、结算下单、订单历史/详情/取消 |
-| Tier 2 | 饮食偏好与过敏原提醒、推荐排序、预算提醒、下单规则、管理员 Console 菜品与每日菜单管理 |
-| 基础设施 | Frontend SPA → Spring Boot（JDK 17）→ 独立 MySQL 8.4 |
-| 质量基线 | 全英文用户界面；金额按分计算；鉴权与角色隔离；参数校验；幂等下单；核心服务测试 |
+| Tier 1 | Registration/login, menu browsing/search/multi-category filtering/details, cart with customization options, checkout and ordering, order history/details/cancellation |
+| Tier 2 | Dietary preferences and allergen alerts, recommendation ranking, budget reminders, ordering rules, Admin Console dish and daily menu management |
+| Infrastructure | Frontend SPA → Spring Boot (JDK 17) → standalone MySQL 8.4 |
+| Quality baseline | All-English user interface; amounts calculated in cents; authentication and role isolation; parameter validation; idempotent ordering; core service tests |
 
-### 1.2 明确不在本阶段范围内
+### 1.2 Explicitly Out of Scope for This Phase
 
-- 菜单库存的实时推送（SSE / WebSocket）；
-- AI 流式推荐及 LLM API 集成；
-- Console 经营数据看板。
+- Real-time push of menu inventory (SSE / WebSocket);
+- AI streaming recommendations and LLM API integration;
+- Console operations data dashboard.
 
-> **本次范围内的库存能力**：每日菜单的 `availableQuantity` 是当前可售库存。下单事务会以带库存条件的原子更新扣减，库存不足时回滚订单并返回具体缺货菜品；`Pending` 订单取消成功后在同一事务中返还库存。此项用于验证并发安全、防超卖。仅不实现其他浏览者无需刷新即可看到库存变化的实时推送能力。
+> **Inventory capability within this phase's scope**: the `availableQuantity` of a daily menu is the currently sellable inventory. The order transaction deducts inventory via an atomic update with an inventory condition; when inventory is insufficient, the order is rolled back and the specific out-of-stock dish is returned; after a `Pending` order is successfully cancelled, inventory is restored within the same transaction. This is used to verify concurrency safety and prevent overselling. Only the real-time push capability — where other viewers see inventory changes without refreshing — is not implemented.
 
-## 2. 需求分析
+## 2. Requirements Analysis
 
-### 2.1 用户与权限
+### 2.1 Users and Permissions
 
-系统包含两类身份：
+The system contains two types of identities:
 
-| 角色 | 能力 | 访问边界 |
+| Role | Capabilities | Access Boundaries |
 | --- | --- | --- |
-| `EMPLOYEE` | 菜单、购物车、偏好、结算、本人订单 | 只能访问和修改自己的资源 |
-| `ADMIN` | Console 菜品管理、上下架、每日菜单配置 | 不可通过员工端 API 越权操作；员工不可访问 `/console` 或 `/api/admin/**` |
+| `EMPLOYEE` | Menu, cart, preferences, checkout, own orders | Can only access and modify their own resources |
+| `ADMIN` | Console dish management, listing/unlisting, daily menu configuration | Cannot perform unauthorized operations through employee-facing APIs; employees cannot access `/console` or `/api/admin/**` |
 
-认证使用企业邮箱和密码。邮箱不限制特定域名，但必须格式合法且唯一；密码至少 8 位并同时包含字母和数字。密码只保存 BCrypt 哈希，登录后以 HTTP-only Cookie 持有短生命周期访问令牌（JWT）。
+Authentication uses an enterprise email and password. The email is not restricted to a specific domain, but must be a valid format and unique; the password must be at least 8 characters and contain both letters and numbers. Passwords are stored only as BCrypt hashes; after login, a short-lived access token (JWT) is held in an HTTP-only Cookie.
 
-### 2.2 员工端关键业务规则
+### 2.2 Key Business Rules for the Employee Side
 
-1. **菜单**：只展示当前日期、已上架且被配置进当日菜单的菜品；支持名称/描述关键词搜索、分类多选和分页。
-2. **定制项**：必选组选项未完成时不可加入购物车；每种选择组合是独立购物车条目；加价即时体现在单价和小计中。
-3. **购物车**：同一菜品、同一配置合并数量；不同配置分行；总份数上限为 5。购物车先由前端保存，结算时后端重新计算价格并校验，客户端价格不被信任。
-4. **餐次与截单**：午餐截止 10:00，晚餐截止 15:00。若默认餐次已截止，自动选择最近可订餐次：当日晚餐未截止则选当日晚餐，否则选次日午餐。
-5. **重复下单**：同一员工、同一配送日期、同一餐次只能存在一个有效订单（`Pending` / `Confirmed`）。若已有有效订单，前端引导查看，后端仍强制校验。
-6. **幂等提交**：结算页为每次提交生成 `Idempotency-Key`；相同用户与键的重复请求返回同一订单结果，不能多建订单。
-7. **库存扣减**：提交订单时服务端按菜品汇总份数，以库存条件更新原子扣减；任一菜品库存不足则整单失败并指出缺货菜品，不能超卖。
-8. **取消订单**：仅 `Pending` 可取消；状态更新必须受服务端条件限制，禁止由客户端直接传入任意状态。取消成功后原子返还对应菜品库存。
+1. **Menu**: only dishes that belong to the current date, are listed, and are configured in that day's menu are shown; supports keyword search on name/description, multi-select category filtering, and pagination.
+2. **Customization options**: items cannot be added to the cart until all required option groups are completed; each combination of choices is a separate cart line item; surcharges are immediately reflected in the unit price and subtotal.
+3. **Cart**: the same dish with the same configuration merges quantities; different configurations occupy separate lines; the total number of portions is capped at 5. The cart is first saved by the frontend; at checkout the backend recalculates prices and validates, and client-side prices are not trusted.
+4. **Meal period and cutoff**: lunch closes at 10:00, dinner closes at 15:00. If the default meal period has closed, the nearest orderable meal period is selected automatically: if today's dinner has not closed, today's dinner is selected; otherwise, the next day's lunch is selected.
+5. **Duplicate orders**: the same employee, same delivery date, and same meal period can have only one active order (`Pending` / `Confirmed`). If an active order already exists, the frontend guides the user to view it, and the backend still enforces the validation.
+6. **Idempotent submission**: the checkout page generates an `Idempotency-Key` for each submission; repeated requests with the same user and key return the same order result, and no additional orders can be created.
+7. **Inventory deduction**: when an order is submitted, the server aggregates quantities by dish and performs an atomic conditional update to deduct inventory; if any dish is out of stock, the entire order fails and the out-of-stock dish is indicated; overselling is not possible.
+8. **Order cancellation**: only `Pending` orders can be cancelled; status updates must be constrained by server-side conditions, and clients are prohibited from passing arbitrary statuses directly. After a successful cancellation, the corresponding dish inventory is atomically restored.
 
-### 2.3 偏好与提醒
+### 2.3 Preferences and Reminders
 
-- 过敏原是提醒而非过滤：命中员工标记的过敏原时，前端弹出英文确认框；员工确认后仍可加入。
-- 「Recommended for me」开启时，按菜系、辣度匹配度排序并突出展示；关闭则采用默认排序。
-- 购物车总价超过单餐预算上限时，结算页提示但不阻止下单。
+- Allergens are a reminder rather than a filter: when an allergen tagged by the employee is matched, the frontend displays an English confirmation dialog; the employee can still add the item after confirming.
+- When "Recommended for me" is enabled, dishes are sorted by cuisine and spice-level match and highlighted; when disabled, the default sorting is used.
+- When the cart total exceeds the per-meal budget cap, the checkout page displays a notice but does not block the order.
 
-### 2.4 管理员 Console
+### 2.4 Admin Console
 
-管理员可搜索和按分类筛选全部菜品，创建/编辑菜品，维护图像地址、价格、分类、蛋白质来源、过敏原、辣度和定制项，并控制上架状态。每日菜单按日期配置菜品及供应数量；默认操作日期为次日，同时允许初始化或调整当日菜单。
+Administrators can search and filter all dishes by category, create/edit dishes, maintain image URLs, prices, categories, protein sources, allergens, spice levels, and customization options, and control listing status. The daily menu is configured by date with dishes and supply quantities; the default operating date is the next day, while initialization or adjustment of the current day's menu is also allowed.
 
-## 3. 技术选型
+## 3. Technology Selection
 
-| 层级 | 选型 | 原因 |
+| Layer | Choice | Rationale |
 | --- | --- | --- |
-| 前端 | React + TypeScript + Vite + React Router + TanStack Query | SPA 开发效率高，类型约束清晰，适合表单、缓存与响应式页面 |
-| UI | Ant Design + 少量 CSS Modules | 表格、表单校验、弹窗、抽屉、日期选择器和响应式栅格开箱即用，确保 1.5 小时内可完成高质量交互；仅用 CSS Modules 补充品牌样式与移动端细节 |
-| 后端 | Java 17 + Spring Boot 3 + Spring Web / Validation / Security / Data JPA | 满足 PRD 强制栈，生态成熟，便于事务、认证授权与测试 |
-| 数据库 | 独立 MySQL 8.4 | 满足持久化要求，支持唯一索引和事务约束 |
-| 迁移 | Flyway | 以版本化 SQL 初始化 schema 与种子菜单，启动可重复 |
-| API 描述 | OpenAPI / springdoc | 开发时可交互查看接口；交付时同时提供静态 API 文档 |
-| 测试 | JUnit 5 + Mockito + Spring Boot Test | 覆盖下单、时间规则、权限与价格计算等核心逻辑 |
+| Frontend | React + TypeScript + Vite + React Router + TanStack Query | High SPA development efficiency, clear type constraints, well-suited to forms, caching, and responsive pages |
+| UI | Ant Design + a small amount of CSS Modules | Tables, form validation, modals, drawers, date pickers, and responsive grids work out of the box, ensuring high-quality interactions can be completed within 1.5 hours; CSS Modules are used only to supplement brand styling and mobile details |
+| Backend | Java 17 + Spring Boot 3 + Spring Web / Validation / Security / Data JPA | Meets the PRD-mandated stack, mature ecosystem, convenient for transactions, authentication/authorization, and testing |
+| Database | Standalone MySQL 8.4 | Meets persistence requirements, supports unique indexes and transactional constraints |
+| Migration | Flyway | Versioned SQL initializes the schema and seed menu; startup is repeatable |
+| API description | OpenAPI / springdoc | Interfaces can be viewed interactively during development; a static API document is also provided at delivery |
+| Testing | JUnit 5 + Mockito + Spring Boot Test | Covers core logic such as ordering, time rules, permissions, and price calculation |
 
-本地开发使用已创建的 MySQL `webox` 数据库。连接账户和密码由本地环境变量提供，绝不提交真实密码或 `.env` 文件。
+Local development uses the already-created MySQL `webox` database. The connection account and password are provided via local environment variables; real passwords or `.env` files are never committed.
 
-## 4. 系统架构与数据流
+## 4. System Architecture and Data Flow
 
 ```text
 Browser (React SPA)
@@ -88,92 +88,92 @@ Spring Boot REST API
 MySQL 8.4 (schema managed by Flyway)
 ```
 
-菜单读路径采用 Redis 缓存：缓存「日期 + 筛选前的可见菜单」的轻量投影，短 TTL（例如 60 秒）。管理员变更菜品上架状态或每日菜单后主动失效对应日期缓存。Redis 同时用于短生命周期的重复提交抑制；订单的幂等记录和唯一约束仍以 MySQL 为最终依据。开发环境使用与其他项目隔离的 `127.0.0.1:6380` 实例，生产环境通过环境变量接入托管 Redis。
+The menu read path uses a Redis cache: it caches a lightweight projection of "date + visible menu before filtering" with a short TTL (e.g., 60 seconds). After an administrator changes a dish's listing status or the daily menu, the cache for the corresponding date is actively invalidated. Redis is also used for short-lived duplicate-submission suppression; the idempotency records and unique constraints for orders are still ultimately enforced by MySQL. The development environment uses a `127.0.0.1:6380` instance isolated from other projects; production connects to managed Redis via environment variables.
 
-## 5. 后端模块划分
+## 5. Backend Module Breakdown
 
 ```text
 backend/
-  auth/          注册、登录、令牌、当前用户
-  user/          用户资料、配送地址、饮食偏好
-  menu/          菜品、定制项、每日菜单、员工菜单查询
-  cart/          请求模型与服务端购物车校验（持久化可后置）
-  order/         结算、价格快照、幂等、取消、订单查询
-  admin/         菜品与每日菜单 Console API
-  common/        异常、统一响应、审计字段、金额/时间工具
+  auth/          Registration, login, tokens, current user
+  user/          User profile, delivery address, dietary preferences
+  menu/          Dishes, customization options, daily menus, employee menu queries
+  cart/          Request models and server-side cart validation (persistence can be deferred)
+  order/         Checkout, price snapshots, idempotency, cancellation, order queries
+  admin/         Dish and daily menu Console APIs
+  common/        Exceptions, unified responses, audit fields, money/time utilities
 ```
 
-前端按 `auth`、`menu`、`cart`、`orders`、`settings`、`console` 分 feature 组织；每个 feature 内聚页面、业务组件、请求 hooks 与类型。`shared/ui` 统一封装 Ant Design 的主题、常用确认弹窗与状态组件，`shared/api` 管理请求客户端和错误映射，`shared/lib` 放金额与时间工具。路由守卫同时处理未登录和角色不匹配；所有面向用户的字符串集中在英文文案文件，避免遗漏中文提示。
+The frontend is organized by feature: `auth`, `menu`, `cart`, `orders`, `settings`, `console`; each feature encapsulates pages, business components, request hooks, and types. `shared/ui` uniformly encapsulates Ant Design theming, common confirmation dialogs, and status components; `shared/api` manages the request client and error mapping; `shared/lib` holds money and time utilities. Route guards handle both unauthenticated access and role mismatches; all user-facing strings are centralized in English copy files to avoid missed Chinese text.
 
-## 6. 数据模型概要
+## 6. Data Model Overview
 
-| 实体 | 关键字段与约束 |
+| Entity | Key Fields and Constraints |
 | --- | --- |
-| `users` | `id`、唯一 `email`、`password_hash`、`role`、时间戳 |
-| `user_preferences` | `user_id`、preferred categories、spice preference、taste preference、预算上下限 |
-| `user_allergens` | `user_id` + `allergen` 唯一 |
-| `addresses` | `id`、`user_id`、地址、是否默认 |
-| `dishes` | 名称、描述、`price_cents`、分类、蛋白质、辣度、是否上架、图片地址 |
-| `dish_allergens` | `dish_id` + `allergen` 唯一 |
-| `option_groups` / `option_items` | 菜品定制组、必选标记、选项、`extra_price_cents` |
-| `daily_menus` | `menu_date` + `dish_id` 唯一、当前可售 `available_quantity`（非负）；下单以条件更新原子扣减，取消时条件状态变更成功后原子返还 |
-| `orders` | 用户、日期、餐次、地址快照、状态、`total_cents`、幂等键；有效订单唯一约束策略见下文 |
-| `order_items` | 菜品名称/价格快照、数量、小计 |
-| `order_item_options` | 已选选项名称/加价快照 |
-| `idempotency_records` | 用户、幂等键、请求摘要、订单 ID、响应状态 |
+| `users` | `id`, unique `email`, `password_hash`, `role`, timestamps |
+| `user_preferences` | `user_id`, preferred categories, spice preference, taste preference, budget bounds |
+| `user_allergens` | `user_id` + `allergen` unique |
+| `addresses` | `id`, `user_id`, address, is-default |
+| `dishes` | Name, description, `price_cents`, category, protein, spice level, listed status, image URL |
+| `dish_allergens` | `dish_id` + `allergen` unique |
+| `option_groups` / `option_items` | Dish customization groups, required flag, options, `extra_price_cents` |
+| `daily_menus` | `menu_date` + `dish_id` unique, currently sellable `available_quantity` (non-negative); orders deduct atomically via conditional update, and cancellation restores atomically after a successful conditional status change |
+| `orders` | User, date, meal period, address snapshot, status, `total_cents`, idempotency key; active-order unique constraint strategy see below |
+| `order_items` | Dish name/price snapshot, quantity, subtotal |
+| `order_item_options` | Selected option name/surcharge snapshot |
+| `idempotency_records` | User, idempotency key, request digest, order ID, response status |
 
-金额字段一律使用 `BIGINT` 的分（如 `2250` 表示 `¥22.50`），Java 使用 `long`/`BigDecimal` 转换展示，绝不使用 `double`。
+Monetary fields uniformly use `BIGINT` cents (e.g., `2250` means `¥22.50`); Java converts and displays with `long`/`BigDecimal`, never `double`.
 
-## 7. 可靠性与安全设计
+## 7. Reliability and Security Design
 
-### 7.1 下单事务与幂等
+### 7.1 Order Transaction and Idempotency
 
-1. 校验 JWT 身份、请求格式、购物车总份数、菜品可见性、定制项和截单规则；
-2. 在单个数据库事务中读取/创建幂等记录；已存在完成记录则直接返回原订单；
-3. 检查该员工同日期同餐次是否有有效订单；
-4. 服务端根据菜单和选项当前价格计算金额；按菜品汇总数量并逐项执行 `UPDATE daily_menus SET available_quantity = available_quantity - :quantity WHERE menu_date = :date AND dish_id = :dishId AND available_quantity >= :quantity`。任一更新影响行数为 0 时抛出缺货错误，整个事务回滚；
-5. 仅在全部库存更新成功后写入订单、订单项和选项快照；
-6. 写入幂等结果后提交事务。
+1. Validate JWT identity, request format, cart total portions, dish visibility, customization options, and cutoff rules;
+2. Read/create the idempotency record within a single database transaction; if a completed record already exists, return the original order directly;
+3. Check whether the employee has an active order for the same date and meal period;
+4. The server calculates amounts based on the current prices of the menu and options; aggregates quantities by dish and executes, item by item, `UPDATE daily_menus SET available_quantity = available_quantity - :quantity WHERE menu_date = :date AND dish_id = :dishId AND available_quantity >= :quantity`. If any update affects 0 rows, an out-of-stock error is thrown and the entire transaction is rolled back;
+5. Order, order items, and option snapshots are written only after all inventory updates succeed;
+6. The idempotency result is written and the transaction is committed.
 
-数据库使用唯一约束辅助保护幂等键（`user_id, idempotency_key`）。对「有效订单唯一」使用事务内条件检查，并在 schema 中使用可唯一化的 `active_meal_key`（有效状态为 `date#meal`，取消后为 `NULL`）建立 `(user_id, active_meal_key)` 唯一索引，避免并发请求穿透业务检查。取消操作先条件更新订单（`status = Pending`），仅在影响行数为 1 时返还库存；从而使重复取消不会重复返库。
+The database uses a unique constraint to help protect the idempotency key (`user_id, idempotency_key`). For "active order uniqueness", an in-transaction conditional check is used, and a unique index on `(user_id, active_meal_key)` is created in the schema using a uniquely-able `active_meal_key` (the active state is `date#meal`, and `NULL` after cancellation), preventing concurrent requests from slipping past the business check. The cancellation operation first conditionally updates the order (`status = Pending`), and restores inventory only when the affected row count is 1; thus repeated cancellations do not restore inventory multiple times.
 
-### 7.2 授权与输入防护
+### 7.2 Authorization and Input Protection
 
-- Spring Security 的方法级角色控制保护管理员接口；资源查询始终带当前 `user_id` 条件。
-- Controller 使用 Bean Validation 限制长度、枚举和格式（邮箱/地址 ≤ 200，搜索词 ≤ 50）。
-- JPA Criteria / 参数绑定实现搜索和筛选，不拼接 SQL；HTML/URL 输入按白名单和输出编码处理。
-- 统一异常处理返回英文、可操作但不泄露内部信息的错误消息。
-- 登录失败返回通用提示，密码以 BCrypt 存储，敏感配置仅从环境变量加载。
+- Spring Security's method-level role control protects admin endpoints; resource queries always include the current `user_id` condition.
+- Controllers use Bean Validation to limit lengths, enums, and formats (email/address ≤ 200, search term ≤ 50).
+- JPA Criteria / parameter binding implement search and filtering without SQL concatenation; HTML/URL inputs are handled with allowlists and output encoding.
+- Unified exception handling returns English error messages that are actionable but do not leak internal information.
+- Login failures return a generic message, passwords are stored with BCrypt, and sensitive configuration is loaded only from environment variables.
 
-### 7.3 时间与可测试性
+### 7.3 Time and Testability
 
-后端统一使用 `Asia/Shanghai` 时区，并注入 `Clock`，使截单规则能够稳定测试。配送日期和餐次由后端最终解析；前端展示后端返回的建议值，避免浏览器时钟或时区差异导致不一致。
+The backend uniformly uses the `Asia/Shanghai` timezone and injects a `Clock`, so cutoff rules can be tested reliably. Delivery date and meal period are ultimately resolved by the backend; the frontend displays the suggested values returned by the backend to avoid inconsistencies caused by browser clocks or timezone differences.
 
-## 8. 初始数据与演示策略
+## 8. Initial Data and Demo Strategy
 
-Flyway 种子数据将创建：管理员账户、演示员工账户、PRD 中的 9 个英文菜品、菜品定制项、当日与次日的可订菜单、供应数量和示例地址。密码不会以明文写入数据库，将以预生成 BCrypt 哈希插入；演示账户信息会在 README 明确说明。
+Flyway seed data will create: an admin account, a demo employee account, the 9 English dishes from the PRD, dish customization options, orderable menus for the current and next day, supply quantities, and a sample address. Passwords will not be written to the database in plaintext; pre-generated BCrypt hashes will be inserted; the demo account information will be clearly documented in the README.
 
-产品图片从候选人交付包的 `product_images/` 复制到前端静态资源并建立稳定映射。图片缺失时使用英文占位状态，不影响核心下单流程。
+Product images are copied from the candidate delivery package's `product_images/` into the frontend static assets with a stable mapping. When an image is missing, an English placeholder state is used and the core ordering flow is unaffected.
 
-## 9. 测试与交付
+## 9. Testing and Delivery
 
-最低测试集：
+Minimum test set:
 
-- 价格计算（加料、多数量、分单位精度）；
-- 截单自动切换（10:00、15:00 边界及跨日）；
-- 总份数上限、必选定制项和预算提醒；
-- 幂等键重复提交只产生一个订单；
-- 同餐次有效订单唯一、取消后可重新下单；
-- 并发下单不会使库存小于零；库存不足时整单回滚，成功取消只返还一次库存；
-- 员工访问 Console 被拒绝，管理员可操作。
+- Price calculation (add-ons, multiple quantities, cent-unit precision);
+- Cutoff auto-switching (10:00 and 15:00 boundaries and cross-day);
+- Total portion cap, required customization options, and budget reminders;
+- Repeated submissions with the same idempotency key produce only one order;
+- Active order uniqueness for the same meal period, and re-ordering is possible after cancellation;
+- Concurrent ordering will not push inventory below zero; insufficient inventory rolls back the entire order, and a successful cancellation restores inventory only once;
+- Employee access to the Console is denied, while admins can operate it.
 
-交付时项目根目录将包含 `README.md`、可执行测试和 `ai-conversations/` 的完整原始 AI 对话导出文件；`docs/` 将包含 API 文档与本技术方案。每个已验证变更单元均提交 Git commit。
+At delivery, the project root will contain `README.md`, executable tests, and the complete raw AI conversation export files in `ai-conversations/`; `docs/` will contain the API documentation and this technical solution. Each verified change unit is committed as a Git commit.
 
-## 10. 实施顺序
+## 10. Implementation Order
 
-1. 初始化 Maven 后端、React 前端、环境变量模板、MySQL/Flyway；
-2. 建模与种子数据，完成认证、英文基础布局；
-3. 完成菜单、详情、定制、购物车、带条件库存扣减的下单；
-4. 完成订单查询/取消、偏好与全部订餐规则；
-5. 完成 Console 菜品/每日菜单管理；
-6. 补齐测试、API 文档、启动说明并进行端到端验证。
+1. Initialize the Maven backend, React frontend, environment variable template, MySQL/Flyway;
+2. Model and seed data, complete authentication and the English base layout;
+3. Complete menu, details, customization, cart, and ordering with conditional inventory deduction;
+4. Complete order query/cancellation, preferences, and all ordering rules;
+5. Complete Console dish/daily menu management;
+6. Fill in tests, API documentation, startup instructions, and perform end-to-end verification.
