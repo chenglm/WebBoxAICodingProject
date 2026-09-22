@@ -36,6 +36,15 @@ Enterprise employee meal ordering platform: React SPA + Spring Boot 3 (Java 17) 
 
 See [ENVIRONMENT.md](ENVIRONMENT.md) for the complete local-service contract and [docs/BACKEND_API.md](docs/BACKEND_API.md) for endpoint details.
 
+## Demonstration accounts
+
+Both accounts use the password `Password123`:
+
+| Role | Email |
+| --- | --- |
+| Employee | `employee@webbox.example` |
+| Administrator | `admin@webbox.example` |
+
 ## Backend tests
 
 Run the fast unit and MVC suite:

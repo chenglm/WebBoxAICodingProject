@@ -59,7 +59,7 @@ All endpoints below require the `ADMIN` role.
 | `PUT /admin/dishes/{id}` | Replaces a dish and its allergens/customization groups; returns it. |
 | `PATCH /admin/dishes/{id}/visibility?visible=true` | Changes availability; invalidates menu cache. |
 | `POST /admin/dishes/{id}/image` | `multipart/form-data` with an `image` request part named `file`; max 5 MB. |
-| `POST /admin/daily-menus` | `{menuDate:"YYYY-MM-DD",dishes:[{dishId,availableQuantity}]}`; upserts stock and invalidates menu cache. |
+| `POST /admin/daily-menus` | `{menuDate:"YYYY-MM-DD",dishes:[{dishId,availableQuantity}]}`; upserts stock and invalidates menu cache. There is no daily-menu delete endpoint: set a dish's `availableQuantity` to `0` to stop sales for that date while retaining its administrative and order history. |
 | `GET /admin/daily-menus?date=YYYY-MM-DD` | Reads the configured daily menu, including hidden dishes, as `{menuDate,items}`. Each item carries `availableQuantity`. |
 
 `DishInput` is `{name,description,category,protein,spiceLevel,priceCents,imageUrl,visible,allergens,optionGroups}`. An `optionGroups` item is `{name,required,minSelections,maxSelections,items}` and an item is `{name,extraPriceCents}`.
