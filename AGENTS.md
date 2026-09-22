@@ -1,6 +1,6 @@
 # WebBox Collaboration Requirements
 
-All contributors must read [TECHNICAL_SOLUTION.md](TECHNICAL_SOLUTION.md) and this file before making changes. The scope is **Tier 1 + Tier 2**, plus transactional inventory decrement/restore for concurrent order safety. Do not implement Tier 3 real-time inventory push, LLM recommendation, or the Console analytics dashboard unless explicitly assigned later.
+All contributors must read [TECHNICAL_SOLUTION.md](docs/TECHNICAL_SOLUTION.md) and this file before making changes. The scope is **Tier 1 + Tier 2**, plus transactional inventory decrement/restore for concurrent order safety. Do not implement Tier 3 real-time inventory push, LLM recommendation, or the Console analytics dashboard unless explicitly assigned later.
 
 ## Non-negotiable product language rule
 
