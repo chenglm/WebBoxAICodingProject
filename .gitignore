@@ -1,0 +1,22 @@
+# Build outputs
+target/
+build/
+out/
+
+# Java bytecode
+*.class
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# Logs and operating-system files
+*.log
+.DS_Store
