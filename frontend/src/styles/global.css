@@ -1,0 +1,67 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.webox-page {
+  padding: 16px;
+}
+
+@media (min-width: 768px) {
+  .webox-page {
+    padding: 24px 32px;
+  }
+}
+
+.webox-dish-card .ant-card-cover img {
+  height: 160px;
+  object-fit: cover;
+}
+
+.webox-dish-image-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 160px;
+  background: #f5f5f5;
+  color: #8c8c8c;
+  font-size: 13px;
+}
+
+.webox-dish-image-fallback.webox-dish-image-fallback--large {
+  height: 220px;
+}
+
+.webox-price {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.webox-shell-content {
+  min-height: calc(100vh - 64px);
+  background: #f5f7fa;
+}
+
+.webox-auth-layout {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f2f5;
+  padding: 24px;
+}
+
+.webox-auth-card {
+  width: 100%;
+  max-width: 400px;
+}
