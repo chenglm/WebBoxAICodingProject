@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class JwtService {
   private final SecretKey key; private final long ttl;
-  public JwtService(@Value("${app.jwt-secret}") String secret, @Value("${app.jwt-ttl-seconds}") long ttl) { this.key=Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)); this.ttl=ttl; }
+  public JwtService(@Value("${app.jwt-secret}") String secret, @Value("${app.jwt-ttl-seconds}") long ttl) { if(secret==null||secret.isBlank()||secret.getBytes(StandardCharsets.UTF_8).length<32)throw new IllegalStateException("WEBBOX_JWT_SECRET must be at least 32 bytes."); this.key=Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)); this.ttl=ttl; }
   public String create(CurrentUser user) { Instant now=Instant.now(); return Jwts.builder().subject(Long.toString(user.id())).claim("email",user.email()).claim("role",user.role()).issuedAt(Date.from(now)).expiration(Date.from(now.plusSeconds(ttl))).signWith(key).compact(); }
   public CurrentUser parse(String token) { var c=Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload(); return new CurrentUser(Long.parseLong(c.getSubject()),c.get("email",String.class),c.get("role",String.class)); }
   public long ttl() { return ttl; }

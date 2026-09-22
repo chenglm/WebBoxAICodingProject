@@ -6,6 +6,8 @@ The backend is served at `/api`. All request and response bodies are JSON unless
 
 `POST /auth/login` sets `webbox_token`, an HTTP-only, `SameSite=Lax` cookie. The SPA must call every API with `credentials: 'include'`; it cannot read the cookie. `POST /auth/logout` clears it. The server allows credentialed calls only from `http://localhost:5173` and accepts `Content-Type` and `Idempotency-Key` request headers.
 
+The backend will not start without `WEBBOX_JWT_SECRET`, a private value of at least 32 bytes. Set it in the local shell or uncommitted `.env`; never commit the value.
+
 Unauthenticated protected endpoints return `401`; employee calls to `/admin/**` return `403`. Errors use `{ "code": "...", "message": "English message" }`.
 
 ## Auth
@@ -30,7 +32,7 @@ Unauthenticated protected endpoints return `401`; employee calls to `/admin/**` 
 | `GET /orders/suggestion` | Server-selected `{deliveryDate,mealPeriod}` based on Shanghai cutoffs. |
 | `POST /orders` | Create order; requires `Idempotency-Key`. See below. |
 | `GET /orders` / `GET /orders/{id}` | Caller-owned order list/detail. |
-| `POST /orders/{id}/cancel` | Cancels only a `PENDING` order and restores inventory once. |
+| `POST /orders/{id}/cancel` | Cancels only a `Pending` order and restores inventory once. |
 
 Create-order request:
 
@@ -43,7 +45,7 @@ Create-order request:
 }
 ```
 
-`deliveryDate` and `mealPeriod` may be omitted for the server's nearest orderable meal. Provide either an owned `addressId` or `deliveryAddress`. A successful response is `{id,deliveryDate,mealPeriod,status,addressSnapshot,totalCents,items}`; item prices and selected-option prices are server snapshots. Reusing the same key for the same user returns the original order. There can be only one active `PENDING` or `CONFIRMED` order for a delivery date and meal period. Maximum total portions is five.
+`deliveryDate` and `mealPeriod` may be omitted for the server's nearest orderable meal. If a same-day requested meal is already closed, the server automatically resolves it to the nearest orderable meal. Provide either an owned `addressId` or `deliveryAddress`. A successful response is `{id,deliveryDate,mealPeriod,status,addressSnapshot,totalCents,items}`; statuses are `Pending`, `Confirmed`, or `Cancelled`. Item prices and selected-option prices are server snapshots. Reusing the same key for the same user returns the original order. There can be only one active `Pending` or `Confirmed` order for a delivery date and meal period. Maximum total portions is five.
 
 ## Administrator APIs
 
