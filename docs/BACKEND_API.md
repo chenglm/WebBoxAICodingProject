@@ -27,7 +27,7 @@ Unauthenticated protected endpoints return `401`; employee calls to `/admin/**` 
 | `GET /menu/{dishId}?date=YYYY-MM-DD` | One visible daily-menu dish. |
 | `GET /menu/categories` | Visible-dish category dictionary, returned as an alphabetically sorted string array. |
 | `GET /menu/{dishId}/image` | Authenticated image stream when an administrator uploaded one. |
-| `GET` / `PUT /me/preferences` | Read/update `{preferredCategories,spicePreference,tastePreference,budgetCents,allergens,recommendedEnabled}`. `recommendedEnabled` is persisted per employee. |
+| `GET` / `PUT /me/preferences` | Read/update `{preferredCategories,spicePreference,tastePreference,budgetCents,allergens,recommendedEnabled}`. `tastePreference` is a flavour-intensity value: `Light`, `Moderate`, or `Rich`. `recommendedEnabled` is persisted per employee. |
 | `GET` / `POST /me/addresses` | List/create `{id?,label,address,isDefault}`. |
 | `PUT` / `DELETE /me/addresses/{id}` | Update/delete the caller's address. |
 | `GET /orders/suggestion` | Server-selected `{deliveryDate,mealPeriod}` based on Shanghai cutoffs. |
