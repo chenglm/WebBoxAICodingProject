@@ -1,4 +1,4 @@
-# WebBoxAICodingProject
+# WebBoxEnterpriseEmployeeMealOrderingPlatform
 
 An AI-assisted coding project.
 
