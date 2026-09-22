@@ -22,7 +22,7 @@ export const ALLERGEN_OPTIONS = [
 export const SPICE_LEVELS = ['None', 'Mild', 'Medium', 'Hot'] as const;
 export type SpiceLevel = (typeof SPICE_LEVELS)[number];
 
-export const TASTE_OPTIONS = ['Savory', 'Sweet', 'Sour', 'Spicy', 'Umami'] as const;
+export const TASTE_OPTIONS = ['Light', 'Moderate', 'Rich'] as const;
 export type TastePreference = (typeof TASTE_OPTIONS)[number];
 
 export const PROTEIN_OPTIONS = [

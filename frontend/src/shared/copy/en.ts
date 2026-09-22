@@ -204,11 +204,9 @@ export const copy = {
       'When enabled, dishes matching your cuisines and spice preference are ranked first and highlighted.',
     saveSuccess: 'Preferences saved.',
     tasteOptions: {
-      Savory: 'Savory',
-      Sweet: 'Sweet',
-      Sour: 'Sour',
-      Spicy: 'Spicy',
-      Umami: 'Umami',
+      Light: 'Light',
+      Moderate: 'Moderate',
+      Rich: 'Rich',
     },
   },
   console: {
