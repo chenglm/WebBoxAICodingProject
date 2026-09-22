@@ -6,26 +6,23 @@ export const MAX_ADDRESS_LENGTH = 200;
 export const MAX_EMAIL_LENGTH = 200;
 
 /**
- * Allergen catalog. Values must match the strings used by backend dish and
- * preference data (seeded in English). Kept as display strings because the
- * API contract exchanges allergen names directly.
+ * Server-side vocabularies (Bean Validation on /me/preferences, verified
+ * against the running backend). Values are exchanged verbatim with the API.
  */
 export const ALLERGEN_OPTIONS = [
   'Peanuts',
-  'Tree Nuts',
-  'Milk',
-  'Eggs',
-  'Wheat (Gluten)',
+  'Dairy',
+  'Egg',
+  'Gluten',
   'Soy',
   'Fish',
   'Shellfish',
-  'Sesame',
 ] as const;
 
-export const SPICE_LEVELS = ['NONE', 'MILD', 'MEDIUM', 'HOT'] as const;
+export const SPICE_LEVELS = ['None', 'Mild', 'Medium', 'Hot'] as const;
 export type SpiceLevel = (typeof SPICE_LEVELS)[number];
 
-export const TASTE_OPTIONS = ['LIGHT', 'REGULAR', 'RICH'] as const;
+export const TASTE_OPTIONS = ['Savory', 'Sweet', 'Sour', 'Spicy', 'Umami'] as const;
 export type TastePreference = (typeof TASTE_OPTIONS)[number];
 
 export const PROTEIN_OPTIONS = [

@@ -1,30 +1,32 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Col, Input, Pagination, Row, Select, Space, Switch, Typography } from 'antd';
+import { App, Col, Input, Pagination, Row, Select, Space, Switch, Typography } from 'antd';
 import { copy } from '../../shared/copy/en';
 import type { Dish } from '../../shared/api/types';
+import { describeError } from '../../shared/api/http';
 import { MAX_SEARCH_LENGTH } from '../../shared/lib/constants';
 import { EmptyView, ErrorView, LoadingView } from '../../shared/ui/StateViews';
 import { fetchMenu, fetchMenuCategories } from './api';
 import { DishCard } from './DishCard';
 import { DishDetailModal } from './DishDetailModal';
 import { sortByRecommendation } from './recommendation';
-import { DEFAULT_PREFERENCES, usePreferences } from '../settings/hooks';
-import { useRecommendedEnabled } from '../settings/recommended';
+import { DEFAULT_PREFERENCES, usePreferences, useSavePreferences } from '../settings/hooks';
 
 const PAGE_SIZE = 12;
 
 export function MenuPage() {
+  const { message } = App.useApp();
   const [keyword, setKeyword] = useState('');
   const [submittedKeyword, setSubmittedKeyword] = useState('');
   const [categories, setCategories] = useState<string[]>([]);
   /** One-based for AntD Pagination; converted to zero-based on the wire. */
   const [page, setPage] = useState(1);
   const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
-  const [recommendedEnabled, setRecommendedEnabled] = useRecommendedEnabled();
 
   const preferencesQuery = usePreferences();
   const preferences = preferencesQuery.data ?? DEFAULT_PREFERENCES;
+  const savePreferences = useSavePreferences();
+  const recommendedEnabled = preferences.recommendedEnabled;
 
   const categoriesQuery = useQuery({
     queryKey: ['menu', 'categories'],
@@ -66,7 +68,13 @@ export function MenuPage() {
             <Typography.Text>{copy.menu.recommendedToggle}</Typography.Text>
             <Switch
               checked={recommendedEnabled}
-              onChange={setRecommendedEnabled}
+              loading={savePreferences.isPending}
+              onChange={(checked) =>
+                savePreferences.mutate(
+                  { ...preferences, recommendedEnabled: checked },
+                  { onError: (error) => message.error(describeError(error)) },
+                )
+              }
               aria-label={copy.menu.recommendedToggle}
             />
           </Space>

@@ -69,6 +69,7 @@ export interface Preferences {
   tastePreference: TastePreference | null;
   budgetCents: number | null;
   allergens: string[];
+  recommendedEnabled: boolean;
 }
 
 /** `GET /orders/suggestion` response. */
@@ -91,17 +92,18 @@ export interface OrderItem {
   options: OrderItemOptionSnapshot[];
 }
 
-export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+export type OrderStatus = 'Pending' | 'Confirmed' | 'Cancelled';
 
 export interface Order {
   id: number;
+  /** Stable display identifier, e.g. "WB-00000042". */
+  orderNumber: string;
   deliveryDate: string;
   mealPeriod: MealPeriod;
   status: OrderStatus;
   totalCents: number;
   addressSnapshot: string;
   items: OrderItem[];
-  createdAt?: string;
 }
 
 export interface OrderSubmitItem {
@@ -139,6 +141,12 @@ export interface DishInput {
     maxSelections: number;
     items: { name: string; extraPriceCents: number }[];
   }[];
+}
+
+/** `GET /admin/daily-menus?date=` response. */
+export interface DailyMenuReadResult {
+  menuDate: string;
+  items: Dish[];
 }
 
 export interface DailyMenuWriteEntry {

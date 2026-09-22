@@ -35,7 +35,7 @@ export function DishCard({ dish, preferences, showRecommended, onSelect }: DishC
         </div>
         <Space size={4} wrap>
           {dish.category ? <Tag>{dish.category}</Tag> : null}
-          {dish.spiceLevel !== 'NONE' ? <Tag color="volcano">{copy.spice[dish.spiceLevel]}</Tag> : null}
+          {dish.spiceLevel !== 'None' ? <Tag color="volcano">{copy.spice[dish.spiceLevel]}</Tag> : null}
           {dish.protein ? <Tag>{dish.protein}</Tag> : null}
           {recommended ? <Tag color="green">{copy.menu.recommendedTag}</Tag> : null}
           {hits.length > 0 ? <Tag color="red">{copy.menu.allergenTag}</Tag> : null}

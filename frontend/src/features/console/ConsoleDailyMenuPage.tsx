@@ -109,8 +109,11 @@ export function ConsoleDailyMenuPage() {
       render: (_: unknown, entry: EditableEntry) => (
         <Button
           type="link"
-          danger
-          onClick={() => setEntries((current) => current.filter((e) => e.dishId !== entry.dishId))}
+          onClick={() =>
+            setEntries((current) =>
+              current.map((e) => (e.dishId === entry.dishId ? { ...e, availableQuantity: 0 } : e)),
+            )
+          }
         >
           {copy.console.removeFromMenu}
         </Button>
@@ -125,6 +128,7 @@ export function ConsoleDailyMenuPage() {
           {copy.console.dailyMenuTitle}
         </Typography.Title>
         <Typography.Text type="secondary">{copy.console.dailyMenuHint}</Typography.Text>
+        <Typography.Text type="secondary">{copy.console.noDeleteHint}</Typography.Text>
         <Space wrap>
           <DatePicker
             value={date}

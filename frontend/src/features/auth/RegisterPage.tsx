@@ -6,7 +6,7 @@ import { ApiError, describeError } from '../../shared/api/http';
 import { copy } from '../../shared/copy/en';
 import { MAX_EMAIL_LENGTH } from '../../shared/lib/constants';
 import { AuthLayout } from './AuthLayout';
-import { register } from './api';
+import { login, register } from './api';
 import { useAuth } from './AuthContext';
 
 interface RegisterFormValues {
@@ -24,7 +24,11 @@ export function RegisterPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const mutation = useMutation({
-    mutationFn: ({ email, password }: RegisterFormValues) => register(email, password),
+    // Registration does not set the session cookie; log in right after.
+    mutationFn: async ({ email, password }: RegisterFormValues) => {
+      await register(email, password);
+      return login(email, password);
+    },
     onSuccess: (user) => {
       setUser(user);
       message.success(copy.auth.registerSuccess);

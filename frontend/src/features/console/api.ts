@@ -1,5 +1,10 @@
 import { apiRequest, toQueryString } from '../../shared/api/http';
-import type { DailyMenuWriteEntry, Dish, DishInput, MenuResult } from '../../shared/api/types';
+import type {
+  DailyMenuReadResult,
+  DailyMenuWriteEntry,
+  Dish,
+  DishInput,
+} from '../../shared/api/types';
 
 export interface AdminDishQueryParams {
   keyword: string;
@@ -42,17 +47,15 @@ export function uploadDishImage(dishId: number, file: File): Promise<{ imageUrl:
   });
 }
 
-/**
- * Read the scheduled menu for a date via the employee menu endpoint (admins
- * are authenticated too). Note: only visible dishes are returned; a dedicated
- * `GET /admin/daily-menus?date=` covering hidden dishes is a backend gap.
- */
-export async function fetchDailyMenu(date: string): Promise<MenuResult> {
-  const search = new URLSearchParams({ date, page: '0', size: '200' });
-  return apiRequest<MenuResult>(`/menu?${search.toString()}`);
+/** Read the configured daily menu (includes hidden dishes). */
+export function fetchDailyMenu(date: string): Promise<DailyMenuReadResult> {
+  return apiRequest<DailyMenuReadResult>(`/admin/daily-menus${toQueryString({ date })}`);
 }
 
-/** Upsert daily-menu stock for a date. */
+/**
+ * Upsert daily-menu stock for a date. Merge semantics: omitted dishes are
+ * kept; there is no delete — set availableQuantity to 0 to stop selling.
+ */
 export function saveDailyMenu(menuDate: string, dishes: DailyMenuWriteEntry[]): Promise<void> {
   return apiRequest<void>('/admin/daily-menus', {
     method: 'POST',

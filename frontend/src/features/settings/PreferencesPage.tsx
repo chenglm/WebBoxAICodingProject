@@ -14,7 +14,6 @@ import { centsToYuan, yuanToCents } from '../../shared/lib/money';
 import { ErrorView, LoadingView } from '../../shared/ui/StateViews';
 import { fetchMenuCategories } from '../menu/api';
 import { usePreferences, useSavePreferences } from './hooks';
-import { useRecommendedEnabled } from './recommended';
 
 interface PreferencesFormValues {
   allergens: string[];
@@ -22,6 +21,7 @@ interface PreferencesFormValues {
   spicePreference: SpiceLevel | null;
   tastePreference: TastePreference | null;
   budgetYuan: number | null;
+  recommendedEnabled: boolean;
 }
 
 export function PreferencesPage() {
@@ -30,7 +30,6 @@ export function PreferencesPage() {
   const preferencesQuery = usePreferences();
   const savePreferences = useSavePreferences();
   const categoriesQuery = useQuery({ queryKey: ['menu', 'categories'], queryFn: fetchMenuCategories });
-  const [recommendedEnabled, setRecommendedEnabled] = useRecommendedEnabled();
 
   useEffect(() => {
     if (preferencesQuery.data) {
@@ -41,6 +40,7 @@ export function PreferencesPage() {
         spicePreference: p.spicePreference,
         tastePreference: p.tastePreference,
         budgetYuan: p.budgetCents !== null ? centsToYuan(p.budgetCents) : null,
+        recommendedEnabled: p.recommendedEnabled,
       });
     }
   }, [preferencesQuery.data, form]);
@@ -72,6 +72,7 @@ export function PreferencesPage() {
           values.budgetYuan !== null && values.budgetYuan !== undefined
             ? yuanToCents(values.budgetYuan)
             : null,
+        recommendedEnabled: values.recommendedEnabled ?? false,
       },
       {
         onSuccess: () => message.success(copy.settings.saveSuccess),
@@ -125,12 +126,13 @@ export function PreferencesPage() {
           >
             <InputNumber min={0} precision={2} placeholder={copy.settings.budgetPlaceholder} style={{ width: 200 }} />
           </Form.Item>
-          <Form.Item label={copy.settings.recommended} extra={copy.settings.recommendedHint}>
-            <Switch
-              checked={recommendedEnabled}
-              onChange={setRecommendedEnabled}
-              aria-label={copy.settings.recommended}
-            />
+          <Form.Item
+            name="recommendedEnabled"
+            label={copy.settings.recommended}
+            valuePropName="checked"
+            extra={copy.settings.recommendedHint}
+          >
+            <Switch aria-label={copy.settings.recommended} />
           </Form.Item>
           <Form.Item>
             <Space>

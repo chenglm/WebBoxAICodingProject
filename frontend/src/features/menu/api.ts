@@ -27,13 +27,9 @@ export function fetchDishDetail(dishId: number, date?: string): Promise<Dish> {
   return apiRequest<Dish>(`/menu/${dishId}${query}`);
 }
 
-/**
- * No categories dictionary endpoint exists yet; derive distinct categories
- * from a broad menu fetch. Track as a backend contract gap.
- */
-export async function fetchMenuCategories(): Promise<string[]> {
-  const result = await fetchMenu({ keyword: '', categories: [], page: 0, size: 100 });
-  return [...new Set(result.items.map((d) => d.category).filter(Boolean))].sort();
+/** Visible-dish category dictionary (server endpoint, alphabetically sorted). */
+export function fetchMenuCategories(): Promise<string[]> {
+  return apiRequest<string[]>('/menu/categories');
 }
 
 /** Server-resolved nearest orderable slot (authoritative over client time). */

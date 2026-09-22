@@ -175,20 +175,19 @@ export const copy = {
     unitPrice: 'Unit price',
   },
   orderStatus: {
-    PENDING: 'Pending',
-    CONFIRMED: 'Confirmed',
-    CANCELLED: 'Cancelled',
-    COMPLETED: 'Completed',
+    Pending: 'Pending',
+    Confirmed: 'Confirmed',
+    Cancelled: 'Cancelled',
   },
   mealPeriod: {
     LUNCH: 'Lunch',
     DINNER: 'Dinner',
   },
   spice: {
-    NONE: 'No spice',
-    MILD: 'Mild',
-    MEDIUM: 'Medium',
-    HOT: 'Hot',
+    None: 'No spice',
+    Mild: 'Mild',
+    Medium: 'Medium',
+    Hot: 'Hot',
   },
   settings: {
     title: 'Preferences',
@@ -205,9 +204,11 @@ export const copy = {
       'When enabled, dishes matching your cuisines and spice preference are ranked first and highlighted.',
     saveSuccess: 'Preferences saved.',
     tasteOptions: {
-      LIGHT: 'Light',
-      REGULAR: 'Regular',
-      RICH: 'Rich',
+      Savory: 'Savory',
+      Sweet: 'Sweet',
+      Sour: 'Sour',
+      Spicy: 'Spicy',
+      Umami: 'Umami',
     },
   },
   console: {
@@ -253,7 +254,8 @@ export const copy = {
     availableQuantity: 'Available quantity',
     quantityInvalid: 'Quantity must be a non-negative integer.',
     menuSaved: 'Daily menu saved.',
-    removeFromMenu: 'Remove from this day',
+    removeFromMenu: 'Stop offering',
+    noDeleteHint: 'Set the quantity to 0 to stop offering a dish for the day; scheduled dishes cannot be deleted.',
     noImage: 'No image',
   },
 } as const;

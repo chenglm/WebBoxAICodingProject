@@ -151,7 +151,7 @@ export function CheckoutPage() {
             <Space direction="vertical" size={8} style={{ marginTop: 8 }}>
               <Typography.Text>
                 {copy.checkout.successOrderNumber}:{' '}
-                <Typography.Text strong>#{placedOrder.id}</Typography.Text>
+                <Typography.Text strong>{placedOrder.orderNumber}</Typography.Text>
               </Typography.Text>
               <Typography.Text>
                 {copy.checkout.successDelivery}: {placedOrder.deliveryDate} ·{' '}

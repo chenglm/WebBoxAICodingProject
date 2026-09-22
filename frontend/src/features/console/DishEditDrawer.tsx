@@ -90,7 +90,7 @@ export function DishEditDrawer({ dish, creating, categoryOptions, onClose }: Dis
     } else {
       form.resetFields();
       form.setFieldsValue({
-        spiceLevel: 'NONE',
+        spiceLevel: 'None',
         visible: true,
         allergens: [],
         optionGroups: [],

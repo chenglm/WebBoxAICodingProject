@@ -10,14 +10,12 @@ import { cancelOrder, fetchOrders } from './api';
 
 function statusTagColor(status: OrderStatus): string {
   switch (status) {
-    case 'PENDING':
+    case 'Pending':
       return 'gold';
-    case 'CONFIRMED':
+    case 'Confirmed':
       return 'blue';
-    case 'CANCELLED':
+    case 'Cancelled':
       return 'default';
-    case 'COMPLETED':
-      return 'green';
   }
 }
 
@@ -85,7 +83,7 @@ export function OrdersPage() {
                 <Space direction="vertical" size={8} style={{ width: '100%' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography.Text strong>
-                      {copy.orders.orderNumber} #{order.id}
+                      {copy.orders.orderNumber} {order.orderNumber}
                     </Typography.Text>
                     <Tag color={statusTagColor(order.status)}>{copy.orderStatus[order.status]}</Tag>
                   </div>
@@ -104,7 +102,7 @@ export function OrdersPage() {
       )}
 
       <Drawer
-        title={`${copy.orders.detailTitle} · #${selected?.id ?? ''}`}
+        title={`${copy.orders.detailTitle} · ${selected?.orderNumber ?? ''}`}
         open={selected !== null}
         onClose={() => setSelected(null)}
         width={480}
@@ -113,11 +111,6 @@ export function OrdersPage() {
           <Space direction="vertical" size={16} style={{ width: '100%' }}>
             <Space size={8} wrap>
               <Tag color={statusTagColor(selected.status)}>{copy.orderStatus[selected.status]}</Tag>
-              {selected.createdAt ? (
-                <Typography.Text type="secondary">
-                  {copy.orders.placedAt}: {new Date(selected.createdAt).toLocaleString('en-US')}
-                </Typography.Text>
-              ) : null}
             </Space>
             <div>
               <Typography.Text strong>{copy.orders.addressLabel}</Typography.Text>
@@ -149,7 +142,7 @@ export function OrdersPage() {
               <Typography.Text strong>{copy.common.total}</Typography.Text>
               <PriceText cents={selected.totalCents} strong style={{ fontSize: 18 }} />
             </div>
-            {selected.status === 'PENDING' ? (
+            {selected.status === 'Pending' ? (
               <Popconfirm
                 title={copy.orders.cancelConfirmTitle}
                 description={copy.orders.cancelConfirmBody}

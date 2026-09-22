@@ -28,4 +28,5 @@ export const DEFAULT_PREFERENCES: Preferences = {
   tastePreference: null,
   budgetCents: null,
   allergens: [],
+  recommendedEnabled: false,
 };
