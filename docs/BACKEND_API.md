@@ -25,8 +25,9 @@ Unauthenticated protected endpoints return `401`; employee calls to `/admin/**` 
 | --- | --- |
 | `GET /menu?date=YYYY-MM-DD&q=&categories=Chinese&categories=Japanese&page=0&size=20` | Visible daily menu. Returns `{items,total,page,size,menuDate}`. Each item includes pricing, allergens, customization groups/items and `availableQuantity`. |
 | `GET /menu/{dishId}?date=YYYY-MM-DD` | One visible daily-menu dish. |
+| `GET /menu/categories` | Visible-dish category dictionary, returned as an alphabetically sorted string array. |
 | `GET /menu/{dishId}/image` | Authenticated image stream when an administrator uploaded one. |
-| `GET` / `PUT /me/preferences` | Read/update `{preferredCategories,spicePreference,tastePreference,budgetCents,allergens}`. |
+| `GET` / `PUT /me/preferences` | Read/update `{preferredCategories,spicePreference,tastePreference,budgetCents,allergens,recommendedEnabled}`. `recommendedEnabled` is persisted per employee. |
 | `GET` / `POST /me/addresses` | List/create `{id?,label,address,isDefault}`. |
 | `PUT` / `DELETE /me/addresses/{id}` | Update/delete the caller's address. |
 | `GET /orders/suggestion` | Server-selected `{deliveryDate,mealPeriod}` based on Shanghai cutoffs. |
@@ -45,7 +46,7 @@ Create-order request:
 }
 ```
 
-`deliveryDate` and `mealPeriod` may be omitted for the server's nearest orderable meal. If a same-day requested meal is already closed, the server automatically resolves it to the nearest orderable meal. Provide either an owned `addressId` or `deliveryAddress`. A successful response is `{id,deliveryDate,mealPeriod,status,addressSnapshot,totalCents,items}`; statuses are `Pending`, `Confirmed`, or `Cancelled`. Item prices and selected-option prices are server snapshots. Reusing the same key for the same user returns the original order. There can be only one active `Pending` or `Confirmed` order for a delivery date and meal period. Maximum total portions is five.
+`deliveryDate` and `mealPeriod` may be omitted for the server's nearest orderable meal. If a same-day requested meal is already closed, the server automatically resolves it to the nearest orderable meal. Provide either an owned `addressId` or `deliveryAddress`. A successful response is `{id,orderNumber,deliveryDate,mealPeriod,status,addressSnapshot,totalCents,items}`; `orderNumber` is a stable display identifier such as `WB-00000042`. Statuses are `Pending`, `Confirmed`, or `Cancelled`. Item prices and selected-option prices are server snapshots. Reusing the same key for the same user returns the original order. There can be only one active `Pending` or `Confirmed` order for a delivery date and meal period. Maximum total portions is five.
 
 ## Administrator APIs
 
@@ -59,6 +60,7 @@ All endpoints below require the `ADMIN` role.
 | `PATCH /admin/dishes/{id}/visibility?visible=true` | Changes availability; invalidates menu cache. |
 | `POST /admin/dishes/{id}/image` | `multipart/form-data` with an `image` request part named `file`; max 5 MB. |
 | `POST /admin/daily-menus` | `{menuDate:"YYYY-MM-DD",dishes:[{dishId,availableQuantity}]}`; upserts stock and invalidates menu cache. |
+| `GET /admin/daily-menus?date=YYYY-MM-DD` | Reads the configured daily menu, including hidden dishes, as `{menuDate,items}`. Each item carries `availableQuantity`. |
 
 `DishInput` is `{name,description,category,protein,spiceLevel,priceCents,imageUrl,visible,allergens,optionGroups}`. An `optionGroups` item is `{name,required,minSelections,maxSelections,items}` and an item is `{name,extraPriceCents}`.
 

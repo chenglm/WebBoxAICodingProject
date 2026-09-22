@@ -18,4 +18,5 @@ public class AdminController { private final MenuService service; public AdminCo
  @PatchMapping("/dishes/{id}/visibility") public Dish visibility(@PathVariable long id,@RequestParam boolean visible){return service.setVisibility(id,visible);}
  @PostMapping(value="/dishes/{id}/image",consumes="multipart/form-data") public Dish image(@PathVariable long id,@RequestPart MultipartFile file){ if(file.isEmpty()||file.getSize()>5_000_000)throw new com.webbox.common.ApiException(HttpStatus.BAD_REQUEST,"INVALID_IMAGE","Image must be non-empty and no larger than 5 MB."); if(file.getContentType()==null||!file.getContentType().startsWith("image/"))throw new com.webbox.common.ApiException(HttpStatus.BAD_REQUEST,"INVALID_IMAGE","Only image files are supported."); return service.storeImage(id,file); }
  @PostMapping("/daily-menus") @ResponseStatus(HttpStatus.NO_CONTENT) public void daily(@Valid @RequestBody DailyMenuInput input){service.configureDaily(input);}
+ @GetMapping("/daily-menus") public DailyMenuResponse daily(@RequestParam java.time.LocalDate date){return service.adminDailyMenu(date);}
 }
