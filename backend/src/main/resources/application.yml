@@ -1,0 +1,22 @@
+spring:
+  application.name: webbox-backend
+  datasource:
+    url: jdbc:mysql://${WEBBOX_DB_HOST}:${WEBBOX_DB_PORT}/${WEBBOX_DB_NAME}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia%2FShanghai
+    username: ${WEBBOX_DB_USERNAME}
+    password: ${WEBBOX_DB_PASSWORD}
+  jpa:
+    hibernate.ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  data.redis:
+    host: ${WEBBOX_REDIS_HOST}
+    port: ${WEBBOX_REDIS_PORT}
+server:
+  port: ${SERVER_PORT:8080}
+  servlet.context-path: /api
+app:
+  jwt-secret: ${WEBBOX_JWT_SECRET:change-this-local-development-secret-to-a-minimum-of-32-bytes}
+  jwt-ttl-seconds: ${WEBBOX_JWT_TTL_SECONDS:28800}
+  cookie-secure: ${WEBBOX_COOKIE_SECURE:false}
