@@ -35,3 +35,32 @@ Enterprise employee meal ordering platform: React SPA + Spring Boot 3 (Java 17) 
 4. Start the frontend in a separate terminal. It calls `/api` and expects the backend CORS origin `http://localhost:5173`.
 
 See [ENVIRONMENT.md](ENVIRONMENT.md) for the complete local-service contract and [docs/BACKEND_API.md](docs/BACKEND_API.md) for endpoint details.
+
+## Backend tests
+
+Run the fast unit and MVC suite:
+
+```sh
+. scripts/use-project-java.sh
+set -a
+. ./.env
+set +a
+cd backend
+mvn test
+```
+
+Run the real MySQL concurrency suite as well. First, use a privileged local
+MySQL account to provision a separate `WEBBOX_TEST_DB_NAME` database and grant
+`WEBBOX_DB_USERNAME` access to it. The application user is deliberately not
+expected to have system-database or database-creation privileges. The test
+database (default: `webbox_backend_it`) must not equal `WEBBOX_DB_NAME`:
+
+```sh
+. scripts/use-project-java.sh
+set -a
+. ./.env
+set +a
+export WEBBOX_TEST_DB_NAME=webbox_backend_it
+cd backend
+mvn -Pmysql-it verify
+```
